@@ -15,8 +15,10 @@ class CartController extends Controller
     public function index()
     {
         $cartItems = [];
+        $user = null;
 
         if (auth()->check()) {
+            $user = auth()->user();
             $cartItems = Keranjang::where('user_id', auth()->id())
                 ->with([
                     'barang' => function ($query) {
@@ -47,6 +49,13 @@ class CartController extends Controller
 
         return Inertia::render('public_keranjang', [
             'cartItems' => $cartItems,
+            'user' => $user ? [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'phone' => $user->phone ?? '',
+                'address' => $user->address ?? ''
+            ] : null,
         ]);
     }
 
@@ -271,30 +280,5 @@ class CartController extends Controller
         return response()->json([
             'cartCount' => $count
         ]);
-    }
-
-    private function getSharedData()
-    {
-        $favorites = [];
-        $cartCount = 0;
-        if (auth()->check()) {
-            $favorites = \App\Models\UserLikesBarang::where('user_id', auth()->id())
-                ->where('liked', true)
-                ->pluck('barang_id')
-                ->toArray();
-            $cartCount = \App\Models\Keranjang::where('user_id', auth()->id())
-                ->sum('jumlah');
-        }
-        return [
-            'favorites' => $favorites,
-            'cartCount' => $cartCount
-        ];
-    }
-
-    private function shouldReturnJson(Request $request)
-    {
-        return $request->expectsJson() ||
-            $request->ajax() ||
-            $request->header('X-Requested-With') === 'XMLHttpRequest';
     }
 }

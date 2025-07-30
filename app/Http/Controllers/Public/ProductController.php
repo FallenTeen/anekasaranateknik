@@ -33,6 +33,73 @@ class ProductController extends Controller
         ];
     }
 
+    private function formatProductImage($product)
+    {
+        if ($product->gambar) {
+            $product->gambar_url = '/assets/images/barang/' . $product->gambar;
+        } else {
+            $product->gambar_url = '/api/placeholder/300/220';
+        }
+        return $product;
+    }
+
+    private function formatProductImages($product)
+    {
+        if ($product->gambar) {
+            $product->gambar_url = '/assets/images/barang/' . $product->gambar;
+        } else {
+            $product->gambar_url = '/api/placeholder/300/220';
+        }
+
+        if ($product->gambar_deskripsi) {
+            try {
+                $gambarDeskripsi = json_decode($product->gambar_deskripsi, true);
+                if (is_array($gambarDeskripsi)) {
+                    $product->gambar_deskripsi_urls = array_map(function($img) {
+                        return '/assets/images/barang/' . $img;
+                    }, $gambarDeskripsi);
+                } else {
+                    $product->gambar_deskripsi_urls = [];
+                }
+            } catch (\Exception $e) {
+                $product->gambar_deskripsi_urls = [];
+            }
+        } else {
+            $product->gambar_deskripsi_urls = [];
+        }
+
+        return $product;
+    }
+
+    public function getCurrentUserFavorites()
+    {
+        try {
+            if (!auth()->check()) {
+                return response()->json([
+                    'favorites' => [],
+                    'favoritesCount' => 0
+                ]);
+            }
+
+            $favorites = UserLikesBarang::where('user_id', auth()->id())
+                ->where('liked', true)
+                ->pluck('barang_id')
+                ->toArray();
+
+            return response()->json([
+                'favorites' => $favorites,
+                'favoritesCount' => count($favorites)
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('Get current user favorites error: ' . $e->getMessage());
+            return response()->json([
+                'favorites' => [],
+                'favoritesCount' => 0
+            ]);
+        }
+    }
+
     public function index()
     {
         $products = Barang::where('display', true)
@@ -67,7 +134,7 @@ class ProductController extends Controller
                 $item->average_rating = $item->feedbacks->avg('rating') ?? 0;
                 $item->feedbacks_count = $item->feedbacks->count();
                 unset($item->feedbacks);
-                return $item;
+                return $this->formatProductImage($item);
             });
 
         $categories = Barang::where('display', true)
@@ -128,7 +195,7 @@ class ProductController extends Controller
                 $item->average_rating = $item->feedbacks->avg('rating') ?? 0;
                 $item->feedbacks_count = $item->feedbacks->count();
                 unset($item->feedbacks);
-                return $item;
+                return $this->formatProductImage($item);
             });
 
         $categories = Barang::where('display', true)
@@ -180,12 +247,11 @@ class ProductController extends Controller
             ->orderBy('created_at', 'desc')
             ->get()
             ->map(function ($item) {
-                // Calculate discounted price
                 $item->harga_setelah_diskon = $item->harga_jual - ($item->harga_jual * $item->diskon / 100);
                 $item->average_rating = $item->feedbacks->avg('rating') ?? 0;
                 $item->feedbacks_count = $item->feedbacks->count();
                 unset($item->feedbacks);
-                return $item;
+                return $this->formatProductImage($item);
             });
 
         $categories = Barang::where('display', true)
@@ -235,9 +301,14 @@ class ProductController extends Controller
                 }
             ])
             ->findOrFail($id);
+
         $product->harga_setelah_diskon = $product->harga_jual - ($product->harga_jual * $product->diskon / 100);
         $product->average_rating = $product->feedbacks->avg('rating') ?? 0;
         $product->feedbacks_count = $product->feedbacks->count();
+
+        // Format images
+        $product = $this->formatProductImages($product);
+
         unset($product->feedbacks);
 
         $relatedProducts = Barang::where('display', true)
@@ -271,7 +342,7 @@ class ProductController extends Controller
                 $item->average_rating = $item->feedbacks->avg('rating') ?? 0;
                 $item->feedbacks_count = $item->feedbacks->count();
                 unset($item->feedbacks);
-                return $item;
+                return $this->formatProductImage($item);
             });
 
         $sharedData = $this->getSharedData();
@@ -293,86 +364,175 @@ class ProductController extends Controller
 
             if (!auth()->check()) {
                 return response()->json([
-                    'error' => 'Silakan login terlebih dahulu untuk menambahkan ke favorit'
+                    'error' => 'Silakan login terlebih dahulu'
                 ], 401);
             }
 
             $productId = $request->product_id;
             $userId = auth()->id();
+
             $product = Barang::where('id', $productId)
                 ->where('display', true)
                 ->first();
 
             if (!$product) {
                 return response()->json([
-                    'error' => 'Produk tidak ditemukan atau tidak tersedia'
+                    'error' => 'Produk tidak ditemukan'
                 ], 404);
             }
 
-            $existingLike = UserLikesBarang::where('user_id', $userId)
+            $likeRecord = UserLikesBarang::where('user_id', $userId)
                 ->where('barang_id', $productId)
                 ->first();
 
             $isLiked = false;
-            $message = '';
 
-            if ($existingLike) {
-                $newStatus = !$existingLike->liked;
-                $existingLike->update(['liked' => $newStatus]);
-                $existingLike->refresh();
-                $isLiked = $existingLike->liked;
-
-                $message = $isLiked ? 'Produk ditambahkan ke favorit' : 'Produk dihapus dari favorit';
-                if ($isLiked) {
-                    try {
-                        if (class_exists('App\Models\Notifikasi')) {
-                            Notifikasi::createItemLikedNotification(auth()->user(), $product);
-                        }
-                    } catch (\Exception $e) {
-                        \Log::error('Notification error: ' . $e->getMessage());
-                    }
-                }
+            if ($likeRecord) {
+                $likeRecord->liked = !$likeRecord->liked;
+                $likeRecord->save();
+                $isLiked = $likeRecord->liked;
             } else {
                 UserLikesBarang::create([
                     'user_id' => $userId,
                     'barang_id' => $productId,
                     'liked' => true
                 ]);
-
                 $isLiked = true;
-                $message = 'Produk ditambahkan ke favorit';
-
-                try {
-                    if (class_exists('App\Models\Notifikasi')) {
-                        Notifikasi::createItemLikedNotification(auth()->user(), $product);
-                    }
-                } catch (\Exception $e) {
-                    \Log::error('Notification error: ' . $e->getMessage());
-                }
             }
+
             $favoritesCount = UserLikesBarang::where('user_id', $userId)
                 ->where('liked', true)
                 ->count();
-            $cartCount = Keranjang::where('user_id', $userId)->sum('jumlah');
+
+            $cartCount = Keranjang::where('user_id', $userId)
+                ->sum('jumlah');
 
             return response()->json([
-                'message' => $message,
+                'success' => true,
                 'isLiked' => $isLiked,
                 'favoritesCount' => $favoritesCount,
                 'cartCount' => $cartCount,
-                'success' => true
+                'message' => $isLiked ? 'Ditambahkan ke favorit' : 'Dihapus dari favorit'
             ]);
 
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            return response()->json([
-                'error' => 'Data yang dikirim tidak valid',
-                'details' => $e->errors()
-            ], 422);
         } catch (\Exception $e) {
             \Log::error('Toggle favorite error: ' . $e->getMessage());
             return response()->json([
-                'error' => 'Terjadi kesalahan sistem. Silakan coba lagi.'
+                'error' => 'Terjadi kesalahan sistem'
             ], 500);
+        }
+    }
+
+    public function getLikedProducts()
+    {
+        try {
+            if (!auth()->check()) {
+                return response()->json([
+                    'likedItems' => [],
+                    'count' => 0
+                ]);
+            }
+
+            $likedItems = Barang::whereHas('userLikes', function ($query) {
+                $query->where('user_id', auth()->id())
+                    ->where('liked', true);
+            })
+                ->where('display', true)
+                ->select([
+                    'id',
+                    'nama_barang',
+                    'gambar',
+                    'harga_jual',
+                    'deskripsi'
+                ])
+                ->get()
+                ->map(function ($item) {
+                    return $this->formatProductImage($item);
+                });
+
+            return response()->json([
+                'likedItems' => $likedItems,
+                'count' => $likedItems->count()
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'likedItems' => [],
+                'count' => 0
+            ]);
+        }
+    }
+
+    public function getNavbarProducts()
+    {
+        try {
+            $recommendedProducts = Barang::where('display', true)
+                ->where('status_rekomendasi', true)
+                ->whereNotNull('gambar')
+                ->where('gambar', '!=', '')
+                ->select([
+                    'id',
+                    'nama_barang',
+                    'gambar',
+                    'harga_jual',
+                    'deskripsi'
+                ])
+                ->limit(8)
+                ->get()
+                ->map(function ($product) {
+                    return $this->formatProductImage($product);
+                });
+
+            $categories = Barang::where('display', true)
+                ->whereNotNull('kategori')
+                ->where('kategori', '!=', '')
+                ->select('kategori')
+                ->distinct()
+                ->pluck('kategori')
+                ->take(3);
+
+            $categoriesWithTopItems = [];
+            foreach ($categories as $categoryName) {
+                $topItems = Barang::where('kategori', $categoryName)
+                    ->where('status_rekomendasi', true)
+                    ->where('display', true)
+                    ->whereNotNull('gambar')
+                    ->where('gambar', '!=', '')
+                    ->select([
+                        'id',
+                        'nama_barang',
+                        'gambar',
+                        'harga_jual',
+                        'deskripsi'
+                    ])
+                    ->take(3)
+                    ->get()
+                    ->map(function ($product) {
+                        return $this->formatProductImage($product);
+                    });
+
+                if ($topItems->count() > 0) {
+                    $categoriesWithTopItems[] = [
+                        'category' => [
+                            'nama_kategori' => $categoryName,
+                            'deskripsi' => 'Produk ' . $categoryName . ' terbaik'
+                        ],
+                        'topItems' => $topItems
+                    ];
+                }
+            }
+
+            return response()->json([
+                'recommended' => $recommendedProducts,
+                'categories' => $categoriesWithTopItems
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('Get navbar products error: ' . $e->getMessage());
+            return response()->json([
+                'recommended' => [],
+                'categories' => []
+            ]);
         }
     }
 }

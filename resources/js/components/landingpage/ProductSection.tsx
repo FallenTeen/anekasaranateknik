@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ChevronLeft, ChevronRight, Star, ShoppingCart, Heart, Eye } from 'lucide-react';
 import { usePage, router } from '@inertiajs/react';
-import { useShop } from '../../context/ShopContext';
+import { useShop } from '@/context/ShopContext';
 
 interface Product {
   id: number;
@@ -9,11 +9,13 @@ interface Product {
   harga_jual: number;
   harga_setelah_diskon: number;
   diskon: number;
-  gambar: string | null;
-  deskripsi: string | null;
-  average_rating: number;
-  feedbacks_count: number;
-  status_rekomendasi: boolean;
+  gambar: string;
+  deskripsi?: string;
+  stok: number;
+  kategori: string;
+  average_rating?: number;
+  feedbacks_count?: number;
+  status_rekomendasi?: boolean;
 }
 
 interface PageProps {
@@ -24,10 +26,15 @@ interface PageProps {
 
 const ProductsSection = () => {
   const { recommendedProducts = [], categoriesWithProducts = [] } = usePage<PageProps>().props;
-  const { isFavorite, toggleFavorite, addToCart } = useShop();
   const [currentSlide, setCurrentSlide] = useState(0);
-  const sectionRef = useRef(null);
+  const sectionRef = useRef<HTMLDivElement>(null);
+  const { isFavorite, toggleFavorite, addToCart } = useShop();
   const popularProducts = recommendedProducts.slice(0, 3);
+
+  // Remove the addProductsToCache call since it's no longer available
+  useEffect(() => {
+    // This effect is no longer needed since we removed the caching system
+  }, [recommendedProducts, categoriesWithProducts]);
 
   const carouselData = [
     {
@@ -80,7 +87,7 @@ const ProductsSection = () => {
   };
 
   const ProductCard = ({ product, size = "default" }: { product: Product; size?: string }) => {
-    const { isFavorite: isFav, toggleFavorite: toggleFav, addToCart: addCart } = useShop();
+    const { isFavorite: isFav, toggleFavorite: toggleFav, addToCart } = useShop();
     const getCardClass = () => {
       switch(size) {
         case "large":
@@ -100,7 +107,7 @@ const ProductsSection = () => {
       <div className={`${getCardClass()} bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 group`}>
         <div className="relative overflow-hidden">
           <img
-            src={product.gambar ? `/storage/${product.gambar}` : "/api/placeholder/300/220"}
+            src={product.gambar ? `/assets/images/${product.gambar}` : "/api/placeholder/300/220"}
             alt={product.nama_barang}
             className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300 cursor-pointer"
             onClick={() => router.visit(`/public/products/${product.id}`)}
@@ -139,9 +146,9 @@ const ProductsSection = () => {
           <div className="flex items-center mb-3">
             <div className="flex items-center bg-yellow-50 px-2 py-1 rounded-lg">
               <Star className="w-4 h-4 text-yellow-500 fill-current" />
-              <span className="ml-1 text-sm font-semibold text-yellow-700">{product.average_rating.toFixed(1)}</span>
+              <span className="ml-1 text-sm font-semibold text-yellow-700">{product.average_rating?.toFixed(1) || '0.0'}</span>
             </div>
-            <span className="ml-2 text-sm text-gray-500">({product.feedbacks_count} ulasan)</span>
+            <span className="ml-2 text-sm text-gray-500">({product.feedbacks_count || 0} ulasan)</span>
           </div>
           <div className="mb-4">
             <div className="flex items-center gap-2 mb-1">
@@ -169,7 +176,7 @@ const ProductsSection = () => {
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                addCart(product);
+                addToCart(product, 1);
               }}
               className="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-xs text-white font-semibold py-3 px-4 rounded-lg transition-all duration-300 transform hover:scale-105 flex items-center justify-center gap-2 shadow-lg"
             >

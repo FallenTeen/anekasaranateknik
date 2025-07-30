@@ -5,7 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useShop } from '@/context/ShopContext';
 import { Head, Link } from '@inertiajs/react';
 import { ArrowLeft, Heart, ShoppingCart, Star } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 
 interface Product {
     id: number;
@@ -13,14 +13,14 @@ interface Product {
     harga_jual: number;
     harga_setelah_diskon: number;
     diskon: number;
-    gambar: string | null;
-    deskripsi: string | null;
-    kategori: string | null;
-    stok: string;
-    average_rating: number;
-    feedbacks_count: number;
+    gambar: string;
+    deskripsi?: string;
+    stok: number;
+    kategori: string;
+    average_rating?: number;
+    feedbacks_count?: number;
     total_likes: number;
-    status_rekomendasi: boolean;
+    status_rekomendasi?: boolean;
 }
 
 interface Props {
@@ -35,6 +35,11 @@ export default function PublicListByCategory({ products, categories, currentCate
     const [sortBy, setSortBy] = useState<string>('created_at');
     const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
     const { isFavorite, toggleFavorite, addToCart } = useShop();
+
+    // Remove the addProductsToCache call since it's no longer available
+    useEffect(() => {
+        // This effect is no longer needed since we removed the caching system
+    }, [products]);
 
     const sortedProducts = useMemo(() => {
         const sorted = [...products];
@@ -176,7 +181,7 @@ export default function PublicListByCategory({ products, categories, currentCate
                                             <CardContent className="p-0">
                                                 <div className="relative overflow-hidden">
                                                     <img
-                                                        src={product.gambar ? `/storage/${product.gambar}` : '/api/placeholder/300/200'}
+                                                        src={product.gambar ? `/assets/images/${product.gambar}` : '/api/placeholder/300/200'}
                                                         alt={product.nama_barang}
                                                         className="h-48 w-full object-cover transition-transform duration-300 group-hover:scale-105"
                                                     />
@@ -207,10 +212,10 @@ export default function PublicListByCategory({ products, categories, currentCate
                                                         <div className="flex items-center rounded-lg bg-yellow-50 px-2 py-1">
                                                             <Star className="h-4 w-4 fill-current text-yellow-500" />
                                                             <span className="ml-1 text-sm font-semibold text-yellow-700">
-                                                                {product.average_rating.toFixed(1)}
+                                                                {product.average_rating?.toFixed(1) || '0.0'}
                                                             </span>
                                                         </div>
-                                                        <span className="ml-2 text-sm text-gray-500">({product.feedbacks_count})</span>
+                                                        <span className="ml-2 text-sm text-gray-500">({product.feedbacks_count || 0})</span>
                                                     </div>
 
                                                     <div className="mb-4">
@@ -244,7 +249,7 @@ export default function PublicListByCategory({ products, categories, currentCate
                                                                         diskon: product.diskon,
                                                                         gambar: product.gambar,
                                                                         stok: product.stok,
-                                                                        kategori: product.kategori || null,
+                                                                        kategori: product.kategori,
                                                                         status_rekomendasi: product.status_rekomendasi || false,
                                                                     },
                                                                     1,

@@ -15,10 +15,12 @@ createInertiaApp({
     setup({ el, App, props }) {
         const root = createRoot(el);
         const AppWithProvider = (appProps: any) => (
+            <div className="font-poppins">
             <ShopProvider>
                 <App {...appProps} />
                 <Toaster position="top-right" richColors />
             </ShopProvider>
+            </div>
         );
         
         root.render(<AppWithProvider {...props} />);

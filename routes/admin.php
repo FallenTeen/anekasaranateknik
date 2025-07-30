@@ -28,8 +28,9 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
             ->name('kelola.toggle-rekomendasi');
 
         Route::get('/transaksi', [TransaksiController::class, 'index'])->name('transaksi');
-        Route::get('/transaksi/{id}', [TransaksiController::class, 'show'])->name('transaksi.show');
         Route::put('/transaksi/{id}/status', [TransaksiController::class, 'updateStatus'])->name('transaksi.status');
+        Route::get('/transaksi/{id}', [TransaksiController::class, 'show'])->name('transaksi.show');
+
 
         Route::get('/riwayat', [TransaksiController::class, 'riwayat'])->name('riwayat');
         Route::get('/riwayat/export', [TransaksiController::class, 'export'])->name('riwayat.export');
@@ -57,6 +58,6 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
     Route::get('/notifikasi', [NotifikasiController::class, 'index'])->name('notifikasi');
     Route::post('/notifikasi', [NotifikasiController::class, 'store'])->name('notifikasi.store');
     Route::put('/notifikasi/{id}/read', [NotifikasiController::class, 'markAsRead'])->name('notifikasi.markAsRead');
-    Route::delete('/notifikasi/{id}', [NotifikasiController::class, 'destroy'])->name('notifikasi.destroy');
     Route::post('/notifikasi/broadcast', [NotifikasiController::class, 'broadcast'])->name('notifikasi.broadcast');
+    Route::delete('/notifikasi/{id}', [NotifikasiController::class, 'destroy'])->name('notifikasi.destroy');
 });

@@ -39,7 +39,7 @@ class TransaksiController extends Controller
             'expired' => Transaksi::expired()->count(),
         ];
 
-        return Inertia::render('Admin/Transaksi/Index', [
+        return Inertia::render('admin/transaksi/index', [
             'transaksi' => $transaksi,
             'statistik' => $statistik,
         ]);
@@ -55,7 +55,7 @@ class TransaksiController extends Controller
         $transaksi->status_badge_color = $transaksi->status_badge_color;
         $transaksi->can_be_processed = $transaksi->canBeProcessed();
 
-        return Inertia::render('Admin/Transaksi/Show', [
+        return Inertia::render('admin/transaksi/show', [
             'transaksi' => $transaksi,
         ]);
     }
@@ -137,7 +137,7 @@ class TransaksiController extends Controller
                 ->sum('total_bayar'),
         ];
 
-        return Inertia::render('Admin/Transaksi/Riwayat', [
+        return Inertia::render('admin/transaksi/riwayat', [
             'transaksi' => $transaksi,
             'statistik' => $statistik,
         ]);
