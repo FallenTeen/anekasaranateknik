@@ -14,6 +14,19 @@ function Card({ className, ...props }: React.ComponentProps<"div">) {
     />
   )
 }
+function CardCustom({ className, ...props }: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="card"
+      className={cn(
+        "bg-card text-card-foreground flex-col py-6",
+        className
+      )}
+      {...props}
+    />
+  )
+}
+
 
 function CardHeader({ className, ...props }: React.ComponentProps<"div">) {
   return (
@@ -65,4 +78,4 @@ function CardFooter({ className, ...props }: React.ComponentProps<"div">) {
   )
 }
 
-export { Card, CardHeader, CardFooter, CardTitle, CardDescription, CardContent }
+export { Card, CardCustom, CardHeader, CardFooter, CardTitle, CardDescription, CardContent }

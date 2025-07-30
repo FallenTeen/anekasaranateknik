@@ -47,9 +47,9 @@ export default function ConfirmPassword() {
                         <InputError message={errors.password} />
                     </div>
 
-                    <div className="flex items-center">
+                    <div className="flex bg-gradient-to-br from-blue-400 to-blue-500 items-center">
                         <Button className="w-full" disabled={processing}>
-                            {processing && <LoaderCircle className="h-4 w-4 animate-spin" />}
+                            {processing && <LoaderCircle className="h-4 w-4 bg-gradient-to-br from-blue-400/20 disabled to-blue-500/20 animate-spin" />}
                             Confirm password
                         </Button>
                     </div>
