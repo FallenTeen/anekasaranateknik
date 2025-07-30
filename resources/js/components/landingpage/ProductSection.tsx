@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ChevronLeft, ChevronRight, Star, ShoppingCart, Heart } from 'lucide-react';
-import { usePage } from '@inertiajs/react';
+import { ChevronLeft, ChevronRight, Star, ShoppingCart, Heart, Eye } from 'lucide-react';
+import { usePage, router } from '@inertiajs/react';
+import { useShop } from '../../context/ShopContext';
 
 interface Product {
   id: number;
@@ -23,11 +24,9 @@ interface PageProps {
 
 const ProductsSection = () => {
   const { recommendedProducts = [], categoriesWithProducts = [] } = usePage<PageProps>().props;
-  
+  const { isFavorite, toggleFavorite, addToCart } = useShop();
   const [currentSlide, setCurrentSlide] = useState(0);
-  const [favorites, setFavorites] = useState(new Set());
   const sectionRef = useRef(null);
-
   const popularProducts = recommendedProducts.slice(0, 3);
 
   const carouselData = [
@@ -59,11 +58,9 @@ const ProductsSection = () => {
       },
       { threshold: 0.1 }
     );
-
     if (sectionRef.current) {
       observer.observe(sectionRef.current);
     }
-
     return () => observer.disconnect();
   }, []);
 
@@ -75,18 +72,6 @@ const ProductsSection = () => {
     setCurrentSlide((prev) => (prev - 1 + carouselData.length) % carouselData.length);
   };
 
-  const toggleFavorite = (productId: number) => {
-    setFavorites(prev => {
-      const newFavorites = new Set(prev);
-      if (newFavorites.has(productId)) {
-        newFavorites.delete(productId);
-      } else {
-        newFavorites.add(productId);
-      }
-      return newFavorites;
-    });
-  };
-
   const getGridClass = (itemCount: number) => {
     if (itemCount === 1) return 'grid-cols-1 max-w-sm mx-auto';
     if (itemCount === 2) return 'grid-cols-2 sm:grid-cols-2 max-w-4xl mx-auto';
@@ -95,6 +80,7 @@ const ProductsSection = () => {
   };
 
   const ProductCard = ({ product, size = "default" }: { product: Product; size?: string }) => {
+    const { isFavorite: isFav, toggleFavorite: toggleFav, addToCart: addCart } = useShop();
     const getCardClass = () => {
       switch(size) {
         case "large":
@@ -110,15 +96,14 @@ const ProductsSection = () => {
       }
     };
 
-    const isFavorite = favorites.has(product.id);
-
     return (
       <div className={`${getCardClass()} bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 group`}>
         <div className="relative overflow-hidden">
           <img
             src={product.gambar ? `/storage/${product.gambar}` : "/api/placeholder/300/220"}
             alt={product.nama_barang}
-            className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
+            className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300 cursor-pointer"
+            onClick={() => router.visit(`/public/products/${product.id}`)}
           />
           <div className="absolute top-3 left-3 flex flex-col gap-2">
             {product.status_rekomendasi && (
@@ -133,22 +118,24 @@ const ProductsSection = () => {
             )}
           </div>
           <button
-            onClick={() => toggleFavorite(product.id)}
+            onClick={(e) => {
+              e.stopPropagation();
+              toggleFav(product.id);
+            }}
             className="absolute top-3 right-3 p-2 bg-white bg-opacity-90 hover:bg-opacity-100 rounded-full shadow-lg transition-all duration-300 hover:scale-110"
           >
             <Heart
               className={`w-4 h-4 transition-colors ${
-                isFavorite ? 'text-red-500 fill-current' : 'text-gray-400 hover:text-red-500'
+                isFav(product.id) ? 'text-red-500 fill-current' : 'text-gray-400 hover:text-red-500'
               }`}
             />
           </button>
         </div>
-
         <div className="p-5">
-          <h3 className="text-lg font-bold text-gray-800 mb-3 line-clamp-2 leading-tight">
+          <h3 className="text-lg font-bold text-gray-800 mb-3 line-clamp-2 leading-tight cursor-pointer hover:text-blue-600"
+            onClick={() => router.visit(`/public/products/${product.id}`)}>
             {product.nama_barang}
           </h3>
-
           <div className="flex items-center mb-3">
             <div className="flex items-center bg-yellow-50 px-2 py-1 rounded-lg">
               <Star className="w-4 h-4 text-yellow-500 fill-current" />
@@ -156,7 +143,6 @@ const ProductsSection = () => {
             </div>
             <span className="ml-2 text-sm text-gray-500">({product.feedbacks_count} ulasan)</span>
           </div>
-
           <div className="mb-4">
             <div className="flex items-center gap-2 mb-1">
               <span className="text-2xl font-bold text-blue-600">
@@ -169,11 +155,28 @@ const ProductsSection = () => {
               </span>
             )}
           </div>
-
-          <button className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-xs text-white font-semibold py-3 px-4 rounded-lg transition-all duration-300 transform hover:scale-105 flex items-center justify-center gap-2 shadow-lg">
-            <ShoppingCart className="w-4 h-4" />
-            Tambah ke Keranjang
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                router.visit(`/public/products/${product.id}`);
+              }}
+              className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold py-3 px-4 rounded-lg transition-all duration-300 flex items-center justify-center gap-2"
+            >
+              <Eye className="w-4 h-4" />
+              Lihat
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                addCart(product);
+              }}
+              className="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-xs text-white font-semibold py-3 px-4 rounded-lg transition-all duration-300 transform hover:scale-105 flex items-center justify-center gap-2 shadow-lg"
+            >
+              <ShoppingCart className="w-4 h-4" />
+              Keranjang
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -196,7 +199,6 @@ const ProductsSection = () => {
               Dapatkan produk AC terbaik dengan kualitas premium dan harga terjangkau
             </p>
           </div>
-
           <div className={`animate-on-scroll opacity-0 translate-y-10 transition-all duration-1000 grid ${getGridClass(popularProducts.length)} mb-10`}>
             {popularProducts.map((product) => (
               <div key={product.id} className="flex justify-center">
@@ -204,14 +206,12 @@ const ProductsSection = () => {
               </div>
             ))}
           </div>
-
           <div className="flex justify-center mb-8">
             <a href="/public/products" className="animate-on-scroll opacity-0 translate-y-10 transition-all duration-1000 bg-gradient-to-r from-gray-800 to-gray-900 hover:from-gray-900 hover:to-black text-white text-lg font-bold py-4 px-10 rounded-xl transform hover:scale-105 transition-all duration-300 shadow-xl">
               Lihat Semua Produk →
             </a>
           </div>
         </div>
-
         {carouselData.length > 0 && (
           <div className="animate-on-scroll opacity-0 translate-y-10 transition-all duration-1000 relative overflow-hidden rounded-2xl shadow-xl">
             <div
@@ -232,7 +232,6 @@ const ProductsSection = () => {
                         Telusuri Selengkapnya →
                       </a>
                     </div>
-
                     <div className={`grid ${getGridClass(category.products.length)} gap-6`}>
                       {category.products.map((product: Product) => (
                         <div key={product.id} className="flex justify-center">
@@ -244,7 +243,6 @@ const ProductsSection = () => {
                 </div>
               ))}
             </div>
-
             <button
               onClick={prevSlide}
               className="absolute left-6 top-1/2 transform -translate-y-1/2 bg-white hover:bg-gray-50 shadow-xl p-4 rounded-full transition-all duration-300 hover:scale-110 border border-gray-200"
@@ -257,7 +255,6 @@ const ProductsSection = () => {
             >
               <ChevronRight className="w-6 h-6 text-gray-700" />
             </button>
-
             <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 flex space-x-3">
               {carouselData.map((_, index) => (
                 <button

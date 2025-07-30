@@ -38,6 +38,17 @@ interface BreadcrumbItem {
 }
 
 export default function ProdukIndex({ produk, kategori }: Props) {
+    const handleToggleDisplay = (id: number, currentStatus: boolean) => {
+        router.patch(route('admin.produk.kelola.toggle-display', id), {
+            display: !currentStatus,
+        });
+    };
+
+    const handleToggleRecommendation = (id: number, currentStatus: boolean) => {
+        router.patch(route('admin.produk.kelola.toggle-rekomendasi', id), {
+            status_rekomendasi: !currentStatus,
+        });
+    };
     const [search, setSearch] = useState('');
     const [selectedKategori, setSelectedKategori] = useState<string>('all');
     const [statusFilter, setStatusFilter] = useState<string>('semua');
@@ -259,12 +270,12 @@ export default function ProdukIndex({ produk, kategori }: Props) {
                                     <TableHeader>
                                         <TableRow>
                                             <TableHead>Produk</TableHead>
-                                            <TableHead>Kode</TableHead>
+                                            <TableHead className="hidden md:table-cell">Kode</TableHead>
                                             <TableHead>Kategori</TableHead>
                                             <TableHead>Harga</TableHead>
                                             <TableHead>Stok</TableHead>
-                                            <TableHead>Status</TableHead>
-                                            <TableHead>Rating</TableHead>
+                                           <TableHead>Tampil</TableHead>
+                                            <TableHead className="hidden md:table-cell">Rating</TableHead>
                                             <TableHead>Likes</TableHead>
                                             <TableHead>Tanggal</TableHead>
                                             <TableHead>Aksi</TableHead>
@@ -272,10 +283,10 @@ export default function ProdukIndex({ produk, kategori }: Props) {
                                     </TableHeader>
                                     <TableBody>
                                         {filteredProduk.map((item) => (
-                                            <TableRow 
+                                            <TableRow
                                                 key={item.id}
-                                                className="cursor-pointer hover:bg-gray-50 transition-colors"
-                                                onClick={() => window.location.href = route('admin.produk.kelola.show', item.id)}
+                                                className="cursor-pointer transition-colors hover:bg-gray-50"
+                                                onClick={() => (window.location.href = route('admin.produk.kelola.show', item.id))}
                                             >
                                                 <TableCell>
                                                     <div className="flex items-center space-x-3">
@@ -382,6 +393,30 @@ export default function ProdukIndex({ produk, kategori }: Props) {
                                                             className="text-red-600 hover:text-red-700"
                                                         >
                                                             <Trash2 className="h-4 w-4" />
+                                                        </Button>
+                                                        <Button
+                                                            variant="outline"
+                                                            size="sm"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                handleToggleDisplay(item.id, item.display);
+                                                            }}
+                                                            className={item.display ? 'text-green-600' : 'text-gray-500'}
+                                                            title={item.display ? 'Nonaktifkan' : 'Aktifkan'}
+                                                        >
+                                                            {item.display ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+                                                        </Button>
+                                                        <Button
+                                                            variant="outline"
+                                                            size="sm"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                handleToggleRecommendation(item.id, item.status_rekomendasi);
+                                                            }}
+                                                            className={item.status_rekomendasi ? 'text-yellow-500' : 'text-gray-500'}
+                                                            title={item.status_rekomendasi ? 'Hapus rekomendasi' : 'Jadikan rekomendasi'}
+                                                        >
+                                                            <Star className="h-4 w-4" fill={item.status_rekomendasi ? 'currentColor' : 'none'} />
                                                         </Button>
                                                     </div>
                                                 </TableCell>

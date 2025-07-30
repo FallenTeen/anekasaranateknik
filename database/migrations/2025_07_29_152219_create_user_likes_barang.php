@@ -16,6 +16,7 @@ return new class extends Migration
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
             $table->foreignId('barang_id')->constrained('tb_barang')->onDelete('cascade');
             $table->boolean('liked')->default(true);
+            $table->unique(['user_id', 'barang_id'], 'unique_user_barang_like');
             $table->timestamps();
         });
     }

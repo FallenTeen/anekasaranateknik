@@ -23,7 +23,7 @@ class NotifikasiController extends Controller
             'payment_selesai' => Notifikasi::byType(Notifikasi::TYPE_PAYMENT_SELESAI)->count(),
         ];
 
-        return Inertia::render('Admin/Notifikasi/Index', [
+        return Inertia::render('admin/notifikasi/index', [
             'notifikasi' => $notifikasi,
             'statistik' => $statistik,
         ]);

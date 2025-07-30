@@ -12,8 +12,8 @@ class Keranjang extends Model
     protected $table = 'tb_keranjang';
 
     protected $fillable = [
-        'id_user',
-        'id_barang',
+        'user_id',
+        'barang_id',
         'jumlah',
     ];
 
@@ -24,12 +24,12 @@ class Keranjang extends Model
     // Relationships
     public function user()
     {
-        return $this->belongsTo(User::class, 'id_user');
+        return $this->belongsTo(User::class, 'user_id');
     }
 
     public function barang()
     {
-        return $this->belongsTo(Barang::class, 'id_barang');
+        return $this->belongsTo(Barang::class, 'barang_id');
     }
 
     // Helper methods
@@ -37,30 +37,20 @@ class Keranjang extends Model
     {
         return $this->barang->harga_setelah_diskon * $this->jumlah;
     }
+    public function getQuantityAttribute()
+    {
+        return $this->jumlah;
+    }
 
-    // Validation and business logic
     public static function boot()
     {
         parent::boot();
 
         static::saving(function ($keranjang) {
-            // Ensure quantity is positive
             if ($keranjang->jumlah <= 0) {
                 throw new \InvalidArgumentException('Jumlah harus lebih dari 0');
             }
         });
 
-        static::creating(function ($keranjang) {
-            // Check if item already exists in cart
-            $existing = self::where('id_user', $keranjang->id_user)
-                          ->where('id_barang', $keranjang->id_barang)
-                          ->first();
-
-            if ($existing) {
-                // Update quantity instead of creating new record
-                $existing->increment('jumlah', $keranjang->jumlah);
-                return false; // Prevent creation
-            }
-        });
     }
 }

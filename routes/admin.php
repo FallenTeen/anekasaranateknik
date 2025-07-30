@@ -21,6 +21,11 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
         Route::put('/kelola/{id}', [ProdukController::class, 'update'])->name('kelola.update');
         Route::delete('/kelola/{id}', [ProdukController::class, 'destroy'])->name('kelola.destroy');
         Route::get('/kelola/{id}', [ProdukController::class, 'show'])->name('kelola.show');
+        Route::patch('/produk/{id}/toggle-display', [ProdukController::class, 'toggleDisplay'])
+            ->name('kelola.toggle-display');
+
+        Route::patch('/produk/{id}/toggle-rekomendasi', [ProdukController::class, 'toggleRecommendation'])
+            ->name('kelola.toggle-rekomendasi');
 
         Route::get('/transaksi', [TransaksiController::class, 'index'])->name('transaksi');
         Route::get('/transaksi/{id}', [TransaksiController::class, 'show'])->name('transaksi.show');
@@ -38,6 +43,7 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
         Route::get('/jasa/{id}/edit', [ServiceController::class, 'edit'])->name('jasa.edit');
         Route::put('/jasa/{id}', [ServiceController::class, 'update'])->name('jasa.update');
         Route::delete('/jasa/{id}', [ServiceController::class, 'destroy'])->name('jasa.destroy');
+        Route::get('/jasa/{id}', [ServiceController::class, 'show'])->name('jasa.show');
 
         Route::get('/pekerja', [PekerjaController::class, 'index'])->name('pekerja');
         Route::get('/pekerja/create', [PekerjaController::class, 'create'])->name('pekerja.create');
@@ -50,7 +56,7 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
 
     Route::get('/notifikasi', [NotifikasiController::class, 'index'])->name('notifikasi');
     Route::post('/notifikasi', [NotifikasiController::class, 'store'])->name('notifikasi.store');
-    Route::put('/notifikasi/{id}/read', [NotifikasiController::class, 'markAsRead'])->name('notifikasi.read');
+    Route::put('/notifikasi/{id}/read', [NotifikasiController::class, 'markAsRead'])->name('notifikasi.markAsRead');
     Route::delete('/notifikasi/{id}', [NotifikasiController::class, 'destroy'])->name('notifikasi.destroy');
     Route::post('/notifikasi/broadcast', [NotifikasiController::class, 'broadcast'])->name('notifikasi.broadcast');
 });

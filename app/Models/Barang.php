@@ -100,7 +100,7 @@ class Barang extends Model
 
     public function keranjangs()
     {
-        return $this->hasMany(Keranjang::class, 'id_barang');
+        return $this->hasMany(Keranjang::class, 'barang_id');
     }
 
     // Helper methods

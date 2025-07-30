@@ -72,16 +72,23 @@ Route::middleware(['auth', 'verified'])->get('/dashboard', function () {
 })->name('dashboard');
 
 Route::prefix('public')->name('public.')->group(function () {
+
     Route::get('/products', [ProductController::class, 'index'])->name('products.index');
     Route::get('/products/search', [ProductController::class, 'search'])->name('products.search');
     Route::get('/products/category/{kategori}', [ProductController::class, 'byCategory'])->name('products.category');
     Route::get('/products/{id}', [ProductController::class, 'show'])->name('products.show');
     
     Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
-    Route::post('/cart/add', [CartController::class, 'add'])->name('cart.add');
-    Route::put('/cart/{id}', [CartController::class, 'update'])->name('cart.update');
-    Route::delete('/cart/{id}', [CartController::class, 'remove'])->name('cart.remove');
-    Route::delete('/cart', [CartController::class, 'clear'])->name('cart.clear');
+    Route::get('/cart/count', [CartController::class, 'getCount'])->name('cart.count');
+
+    Route::middleware('auth')->group(function () {
+        Route::post('/cart/add', [CartController::class, 'add'])->name('cart.add');
+        Route::put('/cart/update/{id}', [CartController::class, 'update'])->name('cart.update');
+        Route::delete('/cart/remove/{id}', [CartController::class, 'remove'])->name('cart.remove');
+        Route::delete('/cart/clear', [CartController::class, 'clear'])->name('cart.clear');
+
+        Route::post('/products/toggle-favorite', [ProductController::class, 'toggleFavorite'])->name('products.toggle-favorite');
+    });
 });
 
 require __DIR__.'/admin.php';

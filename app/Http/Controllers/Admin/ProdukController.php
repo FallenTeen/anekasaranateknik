@@ -14,6 +14,7 @@ class ProdukController extends Controller
 {
     public function index()
     {
+
         $produk = Barang::select([
             'id',
             'nama_barang',
@@ -157,6 +158,21 @@ class ProdukController extends Controller
             ->with('success', 'Produk berhasil ditambahkan');
     }
 
+    public function toggleDisplay($id)
+    {
+        $produk = Barang::findOrFail($id);
+        $produk->update(['display' => !$produk->display]);
+
+        return back()->with('success', 'Status tampil berhasil diubah');
+    }
+
+    public function toggleRecommendation($id)
+    {
+        $produk = Barang::findOrFail($id);
+        $produk->update(['status_rekomendasi' => !$produk->status_rekomendasi]);
+
+        return back()->with('success', 'Status rekomendasi berhasil diubah');
+    }
     public function update(Request $request, $id)
     {
         $produk = Barang::findOrFail($id);

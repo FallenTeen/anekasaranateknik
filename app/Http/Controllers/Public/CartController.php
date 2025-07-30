@@ -5,7 +5,9 @@ namespace App\Http\Controllers\Public;
 use App\Http\Controllers\Controller;
 use App\Models\Barang;
 use App\Models\Keranjang;
+use App\Models\Notifikasi;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 
 class CartController extends Controller
@@ -13,15 +15,34 @@ class CartController extends Controller
     public function index()
     {
         $cartItems = [];
-        
+
         if (auth()->check()) {
             $cartItems = Keranjang::where('user_id', auth()->id())
-                ->with('barang')
+                ->with([
+                    'barang' => function ($query) {
+                        $query->where('display', true)
+                            ->select([
+                                'id',
+                                'nama_barang',
+                                'kode_barang',
+                                'gambar',
+                                'harga_jual',
+                                'diskon',
+                                'stok',
+                                'kategori',
+                                'status_rekomendasi'
+                            ]);
+                    }
+                ])
                 ->get()
+                ->filter(function ($item) {
+                    return $item->barang !== null;
+                })
                 ->map(function ($item) {
                     $item->barang->harga_setelah_diskon = $item->barang->harga_jual - ($item->barang->harga_jual * $item->barang->diskon / 100);
                     return $item;
-                });
+                })
+                ->values();
         }
 
         return Inertia::render('public_keranjang', [
@@ -31,84 +52,249 @@ class CartController extends Controller
 
     public function add(Request $request)
     {
-        $request->validate([
-            'product_id' => 'required|exists:tb_barang,id',
-            'quantity' => 'required|integer|min:1',
-        ]);
-
-        if (!auth()->check()) {
-            return response()->json(['error' => 'Please login to add items to cart'], 401);
-        }
-
-        $product = Barang::findOrFail($request->product_id);
-        
-        if (!$product->display) {
-            return response()->json(['error' => 'Product not available'], 400);
-        }
-
-        $existingCart = Keranjang::where('user_id', auth()->id())
-            ->where('id_barang', $request->product_id)
-            ->first();
-
-        if ($existingCart) {
-            $existingCart->update([
-                'quantity' => $existingCart->quantity + $request->quantity
+        try {
+            $request->validate([
+                'product_id' => 'required|exists:tb_barang,id',
+                'quantity' => 'required|integer|min:1|max:999',
             ]);
-        } else {
-            Keranjang::create([
-                'user_id' => auth()->id(),
-                'id_barang' => $request->product_id,
-                'quantity' => $request->quantity,
-            ]);
-        }
 
-        return response()->json(['message' => 'Product added to cart successfully']);
+            if (!auth()->check()) {
+                return response()->json([
+                    'error' => 'Silakan login terlebih dahulu untuk menambahkan item ke keranjang'
+                ], 401);
+            }
+
+            $product = Barang::findOrFail($request->product_id);
+
+            if (!$product->display) {
+                return response()->json([
+                    'error' => 'Produk tidak tersedia'
+                ], 400);
+            }
+
+            $quantity = max(1, intval($request->quantity));
+
+            if ($quantity > intval($product->stok)) {
+                return response()->json([
+                    'error' => "Stok tidak mencukupi. Stok tersedia: {$product->stok}"
+                ], 400);
+            }
+
+            $existingCart = Keranjang::where('user_id', auth()->id())
+                ->where('barang_id', $request->product_id)
+                ->first();
+
+            if ($existingCart) {
+                $newQuantity = $existingCart->jumlah + $quantity;
+
+                if ($newQuantity > intval($product->stok)) {
+                    return response()->json([
+                        'error' => "Total quantity melebihi stok. Anda sudah memiliki {$existingCart->jumlah} item di keranjang, stok tersedia: {$product->stok}"
+                    ], 400);
+                }
+
+                $existingCart->update([
+                    'jumlah' => $newQuantity
+                ]);
+            } else {
+                Keranjang::create([
+                    'user_id' => auth()->id(),
+                    'barang_id' => $request->product_id,
+                    'jumlah' => $quantity,
+                ]);
+            }
+
+            try {
+                if (class_exists('App\Models\Notifikasi')) {
+                    Notifikasi::createItemAddedToCartNotification(auth()->user(), $product, $quantity);
+                }
+            } catch (\Exception $e) {
+                \Log::error('Notification error: ' . $e->getMessage());
+            }
+
+            $cartCount = Keranjang::where('user_id', auth()->id())->sum('jumlah');
+
+            return response()->json([
+                'message' => 'Produk berhasil ditambahkan ke keranjang',
+                'cartCount' => $cartCount,
+                'success' => true
+            ]);
+
+        } catch (ValidationException $e) {
+            return response()->json([
+                'error' => 'Data yang dikirim tidak valid',
+                'details' => $e->errors()
+            ], 422);
+        } catch (\Exception $e) {
+            \Log::error('Cart add error: ' . $e->getMessage());
+            return response()->json([
+                'error' => 'Terjadi kesalahan sistem. Silakan coba lagi.'
+            ], 500);
+        }
     }
 
     public function update(Request $request, $id)
     {
-        $request->validate([
-            'quantity' => 'required|integer|min:1',
-        ]);
+        try {
+            $request->validate([
+                'quantity' => 'required|integer|min:1|max:999',
+            ]);
 
-        if (!auth()->check()) {
-            return response()->json(['error' => 'Please login to update cart'], 401);
+            if (!auth()->check()) {
+                return response()->json([
+                    'error' => 'Silakan login terlebih dahulu'
+                ], 401);
+            }
+
+            $cartItem = Keranjang::where('id', $id)
+                ->where('user_id', auth()->id())
+                ->with([
+                    'barang' => function ($query) {
+                        $query->select([
+                            'id',
+                            'nama_barang',
+                            'harga_jual',
+                            'diskon',
+                            'stok',
+                            'display'
+                        ]);
+                    }
+                ])
+                ->first();
+
+            if (!$cartItem) {
+                return response()->json([
+                    'error' => 'Item tidak ditemukan di keranjang'
+                ], 404);
+            }
+
+            if (!$cartItem->barang || !$cartItem->barang->display) {
+                return response()->json([
+                    'error' => 'Produk tidak lagi tersedia'
+                ], 400);
+            }
+
+            $quantity = max(1, intval($request->quantity));
+
+            if ($quantity > intval($cartItem->barang->stok)) {
+                return response()->json([
+                    'error' => "Stok tidak mencukupi. Stok tersedia: {$cartItem->barang->stok}"
+                ], 400);
+            }
+
+            $cartItem->update([
+                'jumlah' => $quantity
+            ]);
+
+            $cartItem->barang->harga_setelah_diskon = $cartItem->barang->harga_jual - ($cartItem->barang->harga_jual * $cartItem->barang->diskon / 100);
+
+            return response()->json([
+                'message' => 'Keranjang berhasil diupdate',
+                'item' => $cartItem->load('barang')
+            ]);
+
+        } catch (ValidationException $e) {
+            return response()->json([
+                'error' => 'Quantity tidak valid',
+                'details' => $e->errors()
+            ], 422);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Terjadi kesalahan sistem. Silakan coba lagi.'
+            ], 500);
         }
-
-        $cartItem = Keranjang::where('id', $id)
-            ->where('user_id', auth()->id())
-            ->firstOrFail();
-
-        $cartItem->update([
-            'quantity' => $request->quantity
-        ]);
-
-        return response()->json(['message' => 'Cart updated successfully']);
     }
 
     public function remove($id)
     {
-        if (!auth()->check()) {
-            return response()->json(['error' => 'Please login to remove items from cart'], 401);
+        try {
+            if (!auth()->check()) {
+                return response()->json([
+                    'error' => 'Silakan login terlebih dahulu'
+                ], 401);
+            }
+
+            $cartItem = Keranjang::where('id', $id)
+                ->where('user_id', auth()->id())
+                ->first();
+
+            if (!$cartItem) {
+                return response()->json([
+                    'error' => 'Item tidak ditemukan di keranjang'
+                ], 404);
+            }
+
+            $cartItem->delete();
+
+            return response()->json([
+                'message' => 'Item berhasil dihapus dari keranjang'
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Terjadi kesalahan sistem. Silakan coba lagi.'
+            ], 500);
         }
-
-        $cartItem = Keranjang::where('id', $id)
-            ->where('user_id', auth()->id())
-            ->firstOrFail();
-
-        $cartItem->delete();
-
-        return response()->json(['message' => 'Item removed from cart successfully']);
     }
 
     public function clear()
     {
-        if (!auth()->check()) {
-            return response()->json(['error' => 'Please login to clear cart'], 401);
+        try {
+            if (!auth()->check()) {
+                return response()->json([
+                    'error' => 'Silakan login terlebih dahulu'
+                ], 401);
+            }
+
+            $deletedCount = Keranjang::where('user_id', auth()->id())->delete();
+
+            return response()->json([
+                'message' => 'Keranjang berhasil dikosongkan',
+                'deleted_count' => $deletedCount
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Terjadi kesalahan sistem. Silakan coba lagi.'
+            ], 500);
+        }
+    }
+
+    public function getCount()
+    {
+        $count = 0;
+
+        if (auth()->check()) {
+            $count = Keranjang::where('user_id', auth()->id())->sum('jumlah');
         }
 
-        Keranjang::where('user_id', auth()->id())->delete();
-
-        return response()->json(['message' => 'Cart cleared successfully']);
+        return response()->json([
+            'cartCount' => $count
+        ]);
     }
-} 
+
+    private function getSharedData()
+    {
+        $favorites = [];
+        $cartCount = 0;
+        if (auth()->check()) {
+            $favorites = \App\Models\UserLikesBarang::where('user_id', auth()->id())
+                ->where('liked', true)
+                ->pluck('barang_id')
+                ->toArray();
+            $cartCount = \App\Models\Keranjang::where('user_id', auth()->id())
+                ->sum('jumlah');
+        }
+        return [
+            'favorites' => $favorites,
+            'cartCount' => $cartCount
+        ];
+    }
+
+    private function shouldReturnJson(Request $request)
+    {
+        return $request->expectsJson() ||
+            $request->ajax() ||
+            $request->header('X-Requested-With') === 'XMLHttpRequest';
+    }
+}

@@ -1,415 +1,436 @@
-import React, { useState, useEffect, useRef } from 'react';
-import {
-  User,
-  ChevronDown,
-  Heart,
-  Search,
-  Instagram,
-  Twitter,
-  Smartphone,
-  X,
-  Settings,
-  LogOut,
-  LayoutDashboard
-} from 'lucide-react';
 import { usePage } from '@inertiajs/react';
+import { ChevronDown, Heart, Instagram, LayoutDashboard, LogOut, Search, Settings, ShoppingCart, Smartphone, Twitter, User, X } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { useShop } from '../../context/ShopContext';
 
 interface User {
-  id: number;
-  name: string;
-  email: string;
-  role: string;
+    id: number;
+    name: string;
+    email: string;
+    role: string;
+}
+
+interface Product {
+    id: number;
+    nama_barang: string;
+    harga_jual: number;
+    harga_setelah_diskon: number;
+    diskon: number;
+    gambar: string | null;
+    deskripsi: string | null;
+    average_rating: number;
+    feedbacks_count: number;
+    status_rekomendasi: boolean;
 }
 
 interface PageProps {
-  auth: {
-    user: User | null;
-  };
-  recommendedProducts?: any[];
-  categoriesWithProducts?: any[];
-  [key: string]: any;
+    auth: {
+        user: User | null;
+    };
+    recommendedProducts?: Product[];
+    categoriesWithProducts?: any[];
+    [key: string]: any;
 }
 
 const NavigationComponent = () => {
-  const { auth, recommendedProducts = [], categoriesWithProducts = [] } = usePage<PageProps>().props;
-  
-  const [searchTerm, setSearchTerm] = useState('');
-  const [currentDateTime, setCurrentDateTime] = useState('');
+    const { auth, recommendedProducts = [], categoriesWithProducts = [] } = usePage<PageProps>().props;
+    const { favorites, isFavorite, favoritesCount, cartCount } = useShop();
+    const [searchTerm, setSearchTerm] = useState('');
+    const [currentDateTime, setCurrentDateTime] = useState('');
+    const [isVisible, setIsVisible] = useState(true);
+    const [lastScrollY, setLastScrollY] = useState(0);
+    const [userDropdownOpen, setUserDropdownOpen] = useState(false);
+    const [likedItemsModalOpen, setLikedItemsModalOpen] = useState(false);
+    const [categoriesHoverOpen, setCategoriesHoverOpen] = useState(false);
+    const [recommendationsHoverOpen, setRecommendationsHoverOpen] = useState(false);
+    const [qrCodeOpen, setQrCodeOpen] = useState(false);
+    const userDropdownRef = useRef<HTMLDivElement>(null);
+    const likedItemsRef = useRef<HTMLDivElement>(null);
+    const qrCodeRef = useRef<HTMLDivElement>(null);
+    const categoriesRef = useRef<HTMLDivElement>(null);
+    const recommendationsRef = useRef<HTMLDivElement>(null);
 
-  const [isVisible, setIsVisible] = useState(true);
-  const [lastScrollY, setLastScrollY] = useState(0);
+    const getLikedProducts = () => {
+        const allProducts = [...recommendedProducts, ...categoriesWithProducts.flatMap((categoryData: any) => categoryData.topItems)];
 
-  const [userDropdownOpen, setUserDropdownOpen] = useState(false);
-  const [likedItemsModalOpen, setLikedItemsModalOpen] = useState(false);
-  const [categoriesHoverOpen, setCategoriesHoverOpen] = useState(false);
-  const [recommendationsHoverOpen, setRecommendationsHoverOpen] = useState(false);
-  const [qrCodeOpen, setQrCodeOpen] = useState(false);
-
-  const [likedItems] = useState([
-    { id: 1, nama_barang: 'Laptop Gaming', harga: 15000000 },
-    { id: 2, nama_barang: 'Mouse Wireless', harga: 250000 },
-    { id: 3, nama_barang: 'Keyboard Mechanical', harga: 800000 }
-  ]);
-
-  const userDropdownRef = useRef<HTMLDivElement>(null);
-  const likedItemsRef = useRef<HTMLDivElement>(null);
-  const qrCodeRef = useRef<HTMLDivElement>(null);
-  const categoriesRef = useRef<HTMLDivElement>(null);
-  const recommendationsRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const updateDateTime = () => {
-      const now = new Date();
-      const options: Intl.DateTimeFormatOptions = {
-        weekday: 'short',
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: true
-      };
-      setCurrentDateTime(now.toLocaleString('id-ID', options));
+        return allProducts.filter((product) => {
+            if (favorites && typeof favorites.has === 'function') {
+                return favorites.has(product.id);
+            }
+            if (Array.isArray(favorites)) {
+                return favorites.includes(product.id);
+            }
+            return false;
+        });
     };
 
-    updateDateTime();
-    const interval = setInterval(updateDateTime, 60000);
-    return () => clearInterval(interval);
-  }, []);
+    const likedProducts = getLikedProducts();
 
-  useEffect(() => {
-    const handleScroll = () => {
-      const currentScrollY = window.scrollY;
-      if (currentScrollY === 0) {
-        setIsVisible(true);
-      } else if (currentScrollY < lastScrollY && currentScrollY > 0) {
-        setIsVisible(true);
-      } else if (currentScrollY > lastScrollY && currentScrollY > 100) {
-        setIsVisible(false);
-        setUserDropdownOpen(false);
-        setLikedItemsModalOpen(false);
-        setCategoriesHoverOpen(false);
-        setRecommendationsHoverOpen(false);
-        setQrCodeOpen(false);
-      }
+    useEffect(() => {
+        const updateDateTime = () => {
+            const now = new Date();
+            const options: Intl.DateTimeFormatOptions = {
+                weekday: 'short',
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: true,
+            };
+            setCurrentDateTime(now.toLocaleString('id-ID', options));
+        };
+        updateDateTime();
+        const interval = setInterval(updateDateTime, 60000);
+        return () => clearInterval(interval);
+    }, []);
 
-      setLastScrollY(currentScrollY);
+    useEffect(() => {
+        const handleScroll = () => {
+            const currentScrollY = window.scrollY;
+            if (currentScrollY === 0) {
+                setIsVisible(true);
+            } else if (currentScrollY < lastScrollY && currentScrollY > 0) {
+                setIsVisible(true);
+            } else if (currentScrollY > lastScrollY && currentScrollY > 100) {
+                setIsVisible(false);
+                setUserDropdownOpen(false);
+                setLikedItemsModalOpen(false);
+                setCategoriesHoverOpen(false);
+                setRecommendationsHoverOpen(false);
+                setQrCodeOpen(false);
+            }
+            setLastScrollY(currentScrollY);
+        };
+        window.addEventListener('scroll', handleScroll, { passive: true });
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, [lastScrollY]);
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (userDropdownRef.current && !userDropdownRef.current.contains(event.target as Node)) {
+                setUserDropdownOpen(false);
+            }
+            if (likedItemsRef.current && !likedItemsRef.current.contains(event.target as Node)) {
+                setLikedItemsModalOpen(false);
+            }
+            if (qrCodeRef.current && !qrCodeRef.current.contains(event.target as Node)) {
+                setQrCodeOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    const handleSearch = () => {
+        if (searchTerm.trim()) {
+            window.location.href = `/public/products/search?q=${encodeURIComponent(searchTerm)}`;
+        }
     };
 
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, [lastScrollY]);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (userDropdownRef.current && !userDropdownRef.current.contains(event.target as Node)) {
-        setUserDropdownOpen(false);
-      }
-      if (likedItemsRef.current && !likedItemsRef.current.contains(event.target as Node)) {
-        setLikedItemsModalOpen(false);
-      }
-      if (qrCodeRef.current && !qrCodeRef.current.contains(event.target as Node)) {
-        setQrCodeOpen(false);
-      }
+    const handleLogout = () => {
+        window.location.href = '/logout';
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+    const getCategoriesDropdownWidth = () => {
+        const totalItems = categoriesWithProducts.reduce((total, categoryData) => {
+            return total + categoryData.topItems.length;
+        }, 0);
+        if (totalItems <= 3) return 'w-80';
+        if (totalItems <= 6) return 'w-96';
+        return 'w-[48rem]';
+    };
 
-  const handleSearch = () => {
-    if (searchTerm.trim()) {
-      window.location.href = `/public/products/search?q=${encodeURIComponent(searchTerm)}`;
-    }
-  };
+    const getRecommendationsDropdownWidth = () => {
+        const itemCount = recommendedProducts.length;
+        if (itemCount <= 3) return 'w-[48rem]';
+        if (itemCount <= 6) return 'w-[56rem]';
+        return 'w-[72rem]';
+    };
 
-  const handleLogout = () => {
-    window.location.href = '/logout';
-  };
-
-  const getCategoriesDropdownWidth = () => {
-    const totalItems = categoriesWithProducts.reduce((total, categoryData) => {
-      return total + categoryData.topItems.length;
-    }, 0);
-
-    if (totalItems <= 3) return 'w-80';
-    if (totalItems <= 6) return 'w-96';
-    return 'w-[48rem]';
-  };
-
-  const getRecommendationsDropdownWidth = () => {
-    const itemCount = recommendedProducts.length;
-    if (itemCount <= 3) return 'w-[48rem]';
-    if (itemCount <= 6) return 'w-[56rem]';
-    return 'w-[72rem]';
-  };
-
-  return (
-    <>
-      <div
-        className={`fixed top-0 left-0 right-0 z-50 transition-transform duration-300 ease-in-out ${
-          isVisible ? 'translate-y-0' : '-translate-y-full'
-        }`}
-      >
-        <nav className="bg-blue-600 text-white">
-          <div className="w-11/12 mx-auto pt-2">
-            <div className="flex justify-between items-center">
-              <div className="flex items-center space-x-4">
-                <div
-                  className="flex items-center cursor-pointer relative"
-                  onClick={() => setQrCodeOpen(!qrCodeOpen)}
-                  ref={qrCodeRef}
-                >
-                  <Smartphone className="w-6 h-6" />
-                  <span className="font-medium">Download Aplikasi Mobile</span>
-
-                  {qrCodeOpen && (
-                    <div className="absolute top-10 left-0 bg-white text-black p-6 rounded-xl shadow-lg w-60 z-50">
-                      <div className="text-center">
-                        <p className="mb-4">Download E-Katalog Untuk Mobile</p>
-                        <div className="w-40 h-40 bg-gray-200 mx-auto rounded flex items-center justify-center">
-                          <span className="text-sm text-gray-500">QR Code</span>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                <div>|</div>
-
-                <div className="flex items-center space-x-2">
-                  <span>Ikuti Kami Di</span>
-                  <div className="flex space-x-2">
-                    <Instagram className="w-6 h-6 cursor-pointer hover:scale-105 transition-transform" />
-                    <Twitter className="w-6 h-6 cursor-pointer hover:scale-105 transition-transform" />
-                  </div>
-                </div>
-              </div>
-
-              <div className="text-right">
-                <span>{currentDateTime}</span>
-              </div>
-            </div>
-          </div>
-        </nav>
-
-        <div className="bg-blue-600 text-white">
-          <div className="w-11/12 mx-auto py-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-8">
-                <div className="flex items-center">
-                  <h1 className="text-xl font-bold">PT. Aneka Sarana Teknik</h1>
-                </div>
-                <div
-                  className="relative"
-                  ref={categoriesRef}
-                  onMouseEnter={() => setCategoriesHoverOpen(true)}
-                  onMouseLeave={() => setCategoriesHoverOpen(false)}
-                >
-                  <button className="px-4 py-2 hover:bg-white hover:text-gray-800 transition-colors rounded">
-                    Kategori
-                  </button>
-
-                  {categoriesHoverOpen && (
-                    <div className={`absolute top-full left-0 mt-4 bg-white text-gray-800 p-6 rounded-b-lg shadow-xl ${getCategoriesDropdownWidth()} z-50`}>
-                      {categoriesWithProducts.map((categoryData, index) => (
-                        <div key={index} className="mb-6 last:mb-0">
-                          <h3 className="text-lg font-bold text-blue-600 mb-2">
-                            {categoryData.category.nama_kategori}
-                          </h3>
-                          <p className="text-sm text-gray-600 mb-4">
-                            {categoryData.category.deskripsi}
-                          </p>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                            {categoryData.topItems.map((item: any) => (
-                              <div key={item.id} className="flex items-center space-x-3 p-2 hover:bg-gray-50 rounded">
-                                <div className="w-12 h-12 bg-gray-100 rounded flex items-center justify-center flex-shrink-0">
-                                  {item.gambar ? (
-                                    <img src={`/storage/${item.gambar}`} alt={item.nama_barang} className="w-full h-full object-cover rounded" />
-                                  ) : (
-                                    <span className="text-xs">IMG</span>
-                                  )}
+    return (
+        <>
+            <div
+                className={`fixed top-0 right-0 left-0 z-50 transition-transform duration-300 ease-in-out ${
+                    isVisible ? 'translate-y-0' : '-translate-y-full'
+                }`}
+            >
+                <nav className="bg-blue-600 text-white">
+                    <div className="mx-auto w-11/12 pt-2">
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center space-x-4">
+                                <div className="relative flex cursor-pointer items-center" onClick={() => setQrCodeOpen(!qrCodeOpen)} ref={qrCodeRef}>
+                                    <Smartphone className="h-6 w-6" />
+                                    <span className="font-medium">Download Aplikasi Mobile</span>
+                                    {qrCodeOpen && (
+                                        <div className="absolute top-10 left-0 z-50 w-60 rounded-xl bg-white p-6 text-black shadow-lg">
+                                            <div className="text-center">
+                                                <p className="mb-4">Download E-Katalog Untuk Mobile</p>
+                                                <div className="mx-auto flex h-40 w-40 items-center justify-center rounded bg-gray-200">
+                                                    <span className="text-sm text-gray-500">QR Code</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
-                                <div className="min-w-0 flex-1">
-                                  <div className="font-medium truncate">{item.nama_barang}</div>
-                                  <div className="text-blue-600 text-sm">
-                                    Rp {item.harga_setelah_diskon.toLocaleString('id-ID')}
-                                  </div>
+                                <div>|</div>
+                                <div className="flex items-center space-x-2">
+                                    <span>Ikuti Kami Di</span>
+                                    <div className="flex space-x-2">
+                                        <Instagram className="h-6 w-6 cursor-pointer transition-transform hover:scale-105" />
+                                        <Twitter className="h-6 w-6 cursor-pointer transition-transform hover:scale-105" />
+                                    </div>
                                 </div>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                <div
-                  className="relative"
-                  ref={recommendationsRef}
-                  onMouseEnter={() => setRecommendationsHoverOpen(true)}
-                  onMouseLeave={() => setRecommendationsHoverOpen(false)}
-                >
-                  <button className="px-4 py-2 hover:bg-white hover:text-gray-800 transition-colors rounded">
-                    Rekomendasi
-                  </button>
-
-                  {recommendationsHoverOpen && (
-                    <div className={`absolute top-full left-0 mt-4 bg-white text-gray-800 p-6 rounded-b-lg shadow-xl ${getRecommendationsDropdownWidth()} z-50`}>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {recommendedProducts.map((item) => (
-                          <div key={item.id} className="flex items-center space-x-3 p-3 hover:bg-gray-50 rounded">
-                            <div className="w-16 h-16 bg-gray-100 rounded flex items-center justify-center flex-shrink-0">
-                              {item.gambar ? (
-                                <img src={`/storage/${item.gambar}`} alt={item.nama_barang} className="w-full h-full object-cover rounded" />
-                              ) : (
-                                <span className="text-xs">IMG</span>
-                              )}
                             </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="font-medium truncate">{item.nama_barang}</div>
-                              <div className="text-sm text-gray-600 truncate">{item.deskripsi}</div>
-                              <div className="text-blue-600 text-sm font-bold">
-                                Rp {item.harga_setelah_diskon.toLocaleString('id-ID')}
-                              </div>
+                            <div className="text-right">
+                                <span>{currentDateTime}</span>
                             </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              <div className="flex-1 max-w-md mx-8">
-                <div className="relative">
-                  <input
-                    type="text"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-                    placeholder="Cari apa yang kamu butuhkan"
-                    className="w-full bg-transparent border border-white/30 rounded-md py-2 px-4 text-white placeholder-white/70 focus:outline-none focus:border-white"
-                  />
-                  <button
-                    onClick={handleSearch}
-                    className="absolute right-2 top-1/2 transform -translate-y-1/2 p-1 hover:bg-blue-700 rounded"
-                  >
-                    <Search className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-
-              <div className="flex items-center space-x-4">
-                <div className="relative" ref={likedItemsRef}>
-                  <button
-                    onClick={() => setLikedItemsModalOpen(!likedItemsModalOpen)}
-                    className="flex items-center space-x-2 p-2 hover:bg-blue-700 rounded transition-colors"
-                  >
-                    <Heart className="w-5 h-5" />
-                    <span>Item Disukai</span>
-                    <ChevronDown className="w-4 h-4" />
-                  </button>
-
-                  {likedItemsModalOpen && (
-                    <div className="absolute top-full right-0 mt-2 bg-white text-gray-800 rounded-lg shadow-lg p-4 w-80 z-50">
-                      <div className="flex justify-between items-center mb-4">
-                        <div>
-                          <h2 className="text-lg font-semibold">Item Disukai</h2>
-                          <p className="text-sm text-gray-600">Klik item untuk melihat detail</p>
                         </div>
-                        <button
-                          onClick={() => setLikedItemsModalOpen(false)}
-                          className="text-gray-600 hover:text-gray-800"
-                        >
-                          <X className="w-5 h-5" />
-                        </button>
-                      </div>
-
-                      <div className="space-y-2">
-                        {likedItems.length > 0 ? (
-                          likedItems.map((item) => (
-                            <div key={item.id} className="flex justify-between items-center py-2 px-3 hover:bg-gray-100 rounded">
-                              <span>{item.nama_barang}</span>
-                              <span className="text-blue-600 font-medium">
-                                Rp {item.harga.toLocaleString('id-ID')}
-                              </span>
+                    </div>
+                </nav>
+                <div className="bg-blue-600 text-white">
+                    <div className="mx-auto w-11/12 py-4">
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center space-x-8">
+                                <div className="flex items-center">
+                                    <h1 className="text-xl font-bold">PT. Aneka Sarana Teknik</h1>
+                                </div>
+                                <div
+                                    className="relative"
+                                    ref={categoriesRef}
+                                    onMouseEnter={() => setCategoriesHoverOpen(true)}
+                                    onMouseLeave={() => setCategoriesHoverOpen(false)}
+                                >
+                                    <button className="rounded px-4 py-2 transition-colors hover:bg-white hover:text-gray-800">Kategori</button>
+                                    {categoriesHoverOpen && (
+                                        <div
+                                            className={`absolute top-full left-0 mt-4 rounded-b-lg bg-white p-6 text-gray-800 shadow-xl ${getCategoriesDropdownWidth()} z-50`}
+                                        >
+                                            {categoriesWithProducts.map((categoryData, index) => (
+                                                <div key={index} className="mb-6 last:mb-0">
+                                                    <h3 className="mb-2 text-lg font-bold text-blue-600">{categoryData.category.nama_kategori}</h3>
+                                                    <p className="mb-4 text-sm text-gray-600">{categoryData.category.deskripsi}</p>
+                                                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                                                        {categoryData.topItems.map((item) => (
+                                                            <div key={item.id} className="flex items-center space-x-3 rounded p-2 hover:bg-gray-50">
+                                                                <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded bg-gray-100">
+                                                                    {item.gambar ? (
+                                                                        <img
+                                                                            src={`/storage/${item.gambar}`}
+                                                                            alt={item.nama_barang}
+                                                                            className="h-full w-full rounded object-cover"
+                                                                        />
+                                                                    ) : (
+                                                                        <span className="text-xs">IMG</span>
+                                                                    )}
+                                                                </div>
+                                                                <div className="min-w-0 flex-1">
+                                                                    <div className="truncate font-medium">{item.nama_barang}</div>
+                                                                    <div className="text-sm text-blue-600">
+                                                                        Rp {item.harga_setelah_diskon.toLocaleString('id-ID')}
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                                <div
+                                    className="relative"
+                                    ref={recommendationsRef}
+                                    onMouseEnter={() => setRecommendationsHoverOpen(true)}
+                                    onMouseLeave={() => setRecommendationsHoverOpen(false)}
+                                >
+                                    <button className="rounded px-4 py-2 transition-colors hover:bg-white hover:text-gray-800">Rekomendasi</button>
+                                    {recommendationsHoverOpen && (
+                                        <div
+                                            className={`absolute top-full left-0 mt-4 rounded-b-lg bg-white p-6 text-gray-800 shadow-xl ${getRecommendationsDropdownWidth()} z-50`}
+                                        >
+                                            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                                                {recommendedProducts.map((item) => (
+                                                    <div key={item.id} className="flex items-center space-x-3 rounded p-3 hover:bg-gray-50">
+                                                        <div className="flex h-16 w-16 flex-shrink-0 items-center justify-center rounded bg-gray-100">
+                                                            {item.gambar ? (
+                                                                <img
+                                                                    src={`/storage/${item.gambar}`}
+                                                                    alt={item.nama_barang}
+                                                                    className="h-full w-full rounded object-cover"
+                                                                />
+                                                            ) : (
+                                                                <span className="text-xs">IMG</span>
+                                                            )}
+                                                        </div>
+                                                        <div className="min-w-0 flex-1">
+                                                            <div className="truncate font-medium">{item.nama_barang}</div>
+                                                            <div className="truncate text-sm text-gray-600">{item.deskripsi}</div>
+                                                            <div className="text-sm font-bold text-blue-600">
+                                                                Rp {item.harga_setelah_diskon.toLocaleString('id-ID')}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
                             </div>
-                          ))
-                        ) : (
-                          <div className="text-gray-500 text-center py-4">
-                            <p>Tidak ada barang disukai</p>
-                            <p className="text-sm">Barang yang anda sukai akan muncul disini</p>
-                          </div>
-                        )}
-                      </div>
+                            <div className="mx-8 max-w-md flex-1">
+                                <div className="relative">
+                                    <input
+                                        type="text"
+                                        value={searchTerm}
+                                        onChange={(e) => setSearchTerm(e.target.value)}
+                                        onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+                                        placeholder="Cari apa yang kamu butuhkan"
+                                        className="w-full rounded-md border border-white/30 bg-transparent px-4 py-2 text-white placeholder-white/70 focus:border-white focus:outline-none"
+                                    />
+                                    <button
+                                        onClick={handleSearch}
+                                        className="absolute top-1/2 right-2 -translate-y-1/2 transform rounded p-1 hover:bg-blue-700"
+                                    >
+                                        <Search className="h-4 w-4" />
+                                    </button>
+                                </div>
+                            </div>
+                            <div className="flex items-center space-x-4">
+                                <div className="relative" ref={likedItemsRef}>
+                                    <button
+                                        onClick={() => setLikedItemsModalOpen(!likedItemsModalOpen)}
+                                        className="flex items-center space-x-2 rounded p-2 transition-colors hover:bg-blue-700"
+                                    >
+                                        <div className="relative">
+                                            <Heart className="h-5 w-5" />
+                                            {favoritesCount > 0 && (
+                                                <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-xs text-white">
+                                                    {favoritesCount}
+                                                </span>
+                                            )}
+                                        </div>
+                                        <span>Item Disukai</span>
+                                        <ChevronDown className="h-4 w-4" />
+                                    </button>
+                                    {likedItemsModalOpen && (
+                                        <div className="absolute top-full right-0 z-50 mt-2 w-80 rounded-lg bg-white p-4 text-gray-800 shadow-lg">
+                                            <div className="mb-4 flex items-center justify-between">
+                                                <div>
+                                                    <h2 className="text-lg font-semibold">Item Disukai</h2>
+                                                    <p className="text-sm text-gray-600">Klik item untuk melihat detail</p>
+                                                </div>
+                                                <button onClick={() => setLikedItemsModalOpen(false)} className="text-gray-600 hover:text-gray-800">
+                                                    <X className="h-5 w-5" />
+                                                </button>
+                                            </div>
+                                            <div className="max-h-96 space-y-2 overflow-y-auto">
+                                                {likedProducts.length > 0 ? (
+                                                    likedProducts.map((item) => (
+                                                        <div
+                                                            key={item.id}
+                                                            className="flex cursor-pointer items-center justify-between rounded px-3 py-2 hover:bg-gray-100"
+                                                            onClick={() => (window.location.href = `/public/products/${item.id}`)}
+                                                        >
+                                                            <span className="truncate">{item.nama_barang}</span>
+                                                            <span className="ml-2 font-medium whitespace-nowrap text-blue-600">
+                                                                Rp {item.harga_setelah_diskon.toLocaleString('id-ID')}
+                                                            </span>
+                                                        </div>
+                                                    ))
+                                                ) : (
+                                                    <div className="py-4 text-center text-gray-500">
+                                                        <p>Tidak ada barang disukai</p>
+                                                        <p className="text-sm">Barang yang anda sukai akan muncul disini</p>
+                                                    </div>
+                                                )}
+                                            </div>
+                                            {likedProducts.length > 0 && (
+                                                <div className="mt-6 flex justify-end">
+                                                    <button
+                                                        onClick={() => {
+                                                            setLikedItemsModalOpen(false);
+                                                            window.location.href = '/public/wishlist';
+                                                        }}
+                                                        className="rounded bg-blue-600 px-4 py-2 text-white transition-colors hover:bg-blue-700"
+                                                    >
+                                                        Lihat Semua
+                                                    </button>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
 
-                      <div className="mt-6 flex justify-end">
-                        <button
-                          onClick={() => setLikedItemsModalOpen(false)}
-                          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
-                        >
-                          Tutup
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-                <div className="relative" ref={userDropdownRef}>
-                  {auth.user ? (
-                    <>
-                      <button
-                        onClick={() => setUserDropdownOpen(!userDropdownOpen)}
-                        className="flex items-center space-x-2 p-2 hover:bg-blue-700 rounded transition-colors"
-                      >
-                        <User className="w-5 h-5" />
-                        <span>{auth.user.email}</span>
-                        <ChevronDown className="w-4 h-4" />
-                      </button>
+                                <div className="relative">
+                                    <a href="/public/cart" className="flex items-center space-x-2 rounded p-2 transition-colors hover:bg-blue-700">
+                                        <div className="relative">
+                                            <ShoppingCart className="h-5 w-5" />
+                                            {cartCount > 0 && (
+                                                <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-xs text-white">
+                                                    {cartCount}
+                                                </span>
+                                            )}
+                                        </div>
+                                        <span>Keranjang</span>
+                                    </a>
+                                </div>
 
-                      {userDropdownOpen && (
-                        <div className="absolute top-full right-0 mt-2 bg-white text-gray-800 rounded-lg shadow-lg p-4 w-44 z-50">
-                          <div className="space-y-2">
-                            {auth.user.role === 'admin' && (
-                              <a href="/admin/dashboard" className="flex items-center space-x-2 w-full text-left p-2 hover:bg-gray-100 rounded">
-                                <LayoutDashboard className="w-4 h-4" />
-                                <span>Dashboard</span>
-                              </a>
-                            )}
-                            <a href="/settings/profile" className="flex items-center space-x-2 w-full text-left p-2 hover:bg-gray-100 rounded">
-                              <Settings className="w-4 h-4" />
-                              <span>Settings Profile</span>
-                            </a>
-                          </div>
-                          <hr className="my-2" />
-                          <button
-                            onClick={handleLogout}
-                            className="flex items-center space-x-2 w-full text-left p-2 hover:bg-gray-100 rounded text-red-600"
-                          >
-                            <LogOut className="w-4 h-4" />
-                            <span>Sign Out</span>
-                          </button>
+                                <div className="relative" ref={userDropdownRef}>
+                                    {auth.user ? (
+                                        <>
+                                            <button
+                                                onClick={() => setUserDropdownOpen(!userDropdownOpen)}
+                                                className="flex items-center space-x-2 rounded p-2 transition-colors hover:bg-blue-700"
+                                            >
+                                                <User className="h-5 w-5" />
+                                                <span>{auth.user.email}</span>
+                                                <ChevronDown className="h-4 w-4" />
+                                            </button>
+                                            {userDropdownOpen && (
+                                                <div className="absolute top-full right-0 z-50 mt-2 w-44 rounded-lg bg-white p-4 text-gray-800 shadow-lg">
+                                                    <div className="space-y-2">
+                                                        {auth.user.role === 'admin' && (
+                                                            <a
+                                                                href="/admin/dashboard"
+                                                                className="flex w-full items-center space-x-2 rounded p-2 text-left hover:bg-gray-100"
+                                                            >
+                                                                <LayoutDashboard className="h-4 w-4" />
+                                                                <span>Dashboard</span>
+                                                            </a>
+                                                        )}
+                                                        <a
+                                                            href="/settings/profile"
+                                                            className="flex w-full items-center space-x-2 rounded p-2 text-left hover:bg-gray-100"
+                                                        >
+                                                            <Settings className="h-4 w-4" />
+                                                            <span>Settings Profile</span>
+                                                        </a>
+                                                    </div>
+                                                    <hr className="my-2" />
+                                                    <button
+                                                        onClick={handleLogout}
+                                                        className="flex w-full items-center space-x-2 rounded p-2 text-left text-red-600 hover:bg-gray-100"
+                                                    >
+                                                        <LogOut className="h-4 w-4" />
+                                                        <span>Sign Out</span>
+                                                    </button>
+                                                </div>
+                                            )}
+                                        </>
+                                    ) : (
+                                        <a href="/login" className="flex items-center space-x-2 rounded p-2 transition-colors hover:bg-blue-700">
+                                            <User className="h-5 w-5" />
+                                            <span>Anda Belum Login</span>
+                                        </a>
+                                    )}
+                                </div>
+                            </div>
                         </div>
-                      )}
-                    </>
-                  ) : (
-                    <a
-                      href="/login"
-                      className="flex items-center space-x-2 p-2 hover:bg-blue-700 rounded transition-colors"
-                    >
-                      <User className="w-5 h-5" />
-                      <span>Anda Belum Login</span>
-                    </a>
-                  )}
+                    </div>
                 </div>
-              </div>
             </div>
-          </div>
-        </div>
-      </div>
-    </>
-  );
+        </>
+    );
 };
 
 export default NavigationComponent;

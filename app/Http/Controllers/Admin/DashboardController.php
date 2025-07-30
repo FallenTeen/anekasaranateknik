@@ -17,14 +17,19 @@ class DashboardController extends Controller
 {
     public function index()
     {
+        $produk = Barang::withCount(['userLikes', 'feedbacks'])
+            ->orderBy('created_at', 'desc')
+            ->paginate(10);
         $users = User::with(['likedBarangs', 'feedbacks', 'keranjangs'])
             ->latest()
             ->get();
 
         $barangs = Barang::with(['userLikes', 'feedbacks', 'keranjangs'])
-            ->withCount(['userLikes as total_likes' => function ($query) {
-                $query->where('liked', true);
-            }])
+            ->withCount([
+                'userLikes as total_likes' => function ($query) {
+                    $query->where('liked', true);
+                }
+            ])
             ->withAvg('feedbacks as average_rating', 'rating')
             ->get()
             ->map(function ($barang) {
@@ -144,9 +149,11 @@ class DashboardController extends Controller
     public function getBarangs()
     {
         $barangs = Barang::with(['userLikes', 'feedbacks'])
-            ->withCount(['userLikes as total_likes' => function ($query) {
-                $query->where('liked', true);
-            }])
+            ->withCount([
+                'userLikes as total_likes' => function ($query) {
+                    $query->where('liked', true);
+                }
+            ])
             ->withAvg('feedbacks as average_rating', 'rating')
             ->latest()
             ->paginate(20);
@@ -230,9 +237,11 @@ class DashboardController extends Controller
     public function getStats()
     {
         $users = User::all();
-        $barangs = Barang::withCount(['userLikes as total_likes' => function ($query) {
+        $barangs = Barang::withCount([
+            'userLikes as total_likes' => function ($query) {
                 $query->where('liked', true);
-            }])
+            }
+        ])
             ->withAvg('feedbacks as average_rating', 'rating')
             ->get();
         $keranjangs = Keranjang::with('barang')->get();
@@ -271,9 +280,11 @@ class DashboardController extends Controller
             ->orWhere('kode_barang', 'like', "%{$query}%")
             ->orWhere('kategori', 'like', "%{$query}%")
             ->orWhere('deskripsi', 'like', "%{$query}%")
-            ->withCount(['userLikes as total_likes' => function ($query) {
-                $query->where('liked', true);
-            }])
+            ->withCount([
+                'userLikes as total_likes' => function ($query) {
+                    $query->where('liked', true);
+                }
+            ])
             ->withAvg('feedbacks as average_rating', 'rating')
             ->paginate(20);
 

@@ -71,12 +71,12 @@ class Transaksi extends Model
     public function getStatusBadgeColorAttribute()
     {
         return match($this->status) {
-            'pending' => 'default',
-            'menunggu_pembayaran' => 'secondary',
-            'dibayar' => 'blue',
-            'diproses' => 'yellow',
-            'selesai' => 'green',
-            'dibatalkan' => 'destructive',
+            self::STATUS_PENDING => 'default',
+            self::STATUS_MENUNGGU_PEMBAYARAN => 'secondary',
+            self::STATUS_DIBAYAR => 'blue',
+            self::STATUS_DIPROSES => 'yellow',
+            self::STATUS_SELESAI => 'green',
+            self::STATUS_DIBATALKAN => 'destructive',
             default => 'default'
         };
     }
@@ -84,29 +84,29 @@ class Transaksi extends Model
     public function getStatusLabelAttribute()
     {
         return match($this->status) {
-            'pending' => 'Menunggu',
-            'menunggu_pembayaran' => 'Menunggu Pembayaran',
-            'dibayar' => 'Sudah Dibayar',
-            'diproses' => 'Sedang Diproses',
-            'selesai' => 'Selesai',
-            'dibatalkan' => 'Dibatalkan',
+            self::STATUS_PENDING => 'Menunggu',
+            self::STATUS_MENUNGGU_PEMBAYARAN => 'Menunggu Pembayaran',
+            self::STATUS_DIBAYAR => 'Sudah Dibayar',
+            self::STATUS_DIPROSES => 'Sedang Diproses',
+            self::STATUS_SELESAI => 'Selesai',
+            self::STATUS_DIBATALKAN => 'Dibatalkan',
             default => 'Unknown'
         };
     }
 
     public function isExpired()
     {
-        return $this->batas_pembayaran && Carbon::now()->gt($this->batas_pembayaran) && $this->status === 'menunggu_pembayaran';
+        return $this->batas_pembayaran && Carbon::now()->gt($this->batas_pembayaran) && $this->status === self::STATUS_MENUNGGU_PEMBAYARAN;
     }
 
     public function canBePaid()
     {
-        return in_array($this->status, ['pending', 'menunggu_pembayaran']) && !$this->isExpired();
+        return in_array($this->status, [self::STATUS_PENDING, self::STATUS_MENUNGGU_PEMBAYARAN]) && !$this->isExpired();
     }
 
     public function canBeProcessed()
     {
-        return $this->status === 'dibayar';
+        return $this->status === self::STATUS_DIBAYAR;
     }
 
     public function scopeByStatus($query, $status)
@@ -117,6 +117,6 @@ class Transaksi extends Model
     public function scopeExpired($query)
     {
         return $query->where('batas_pembayaran', '<', Carbon::now())
-                    ->where('status', 'menunggu_pembayaran');
+                    ->where('status', self::STATUS_MENUNGGU_PEMBAYARAN);
     }
 }
