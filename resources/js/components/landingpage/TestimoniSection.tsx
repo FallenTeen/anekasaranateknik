@@ -6,6 +6,7 @@ const TestimoniSection = () => {
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
   const sectionRef = useRef(null);
 
+  // --- MODIFIKASI MENGGUNAKAN PRAVATAR ---
   const testimonials = [
     {
       id: 1,
@@ -14,7 +15,8 @@ const TestimoniSection = () => {
       company: "Warung Nusantara",
       rating: 5,
       text: "Pelayanan yang sangat memuaskan! Tim teknisi datang tepat waktu dan bekerja dengan profesional. AC di restoran saya sekarang dingin dan hemat listrik.",
-      image: "/api/placeholder/80/80"
+      // Menggunakan Pravatar untuk gambar acak
+      image: "https://i.pravatar.cc/80?u=1"
     },
     {
       id: 2,
@@ -23,7 +25,7 @@ const TestimoniSection = () => {
       company: "Perumahan Griya Asri",
       rating: 5,
       text: "Sudah 2 tahun pakai jasa mereka untuk service AC rumah. Selalu puas dengan hasilnya. Harga terjangkau dan pelayanan ramah.",
-      image: "/api/placeholder/80/80"
+      image: "https://i.pravatar.cc/80?u=2"
     },
     {
       id: 3,
@@ -32,7 +34,7 @@ const TestimoniSection = () => {
       company: "PT. Maju Bersama",
       rating: 5,
       text: "Instalasi AC kantor berjalan lancar tanpa gangguan aktivitas kerja. Teknisi sangat berpengalaman dan memberikan garansi yang baik.",
-      image: "/api/placeholder/80/80"
+      image: "https://i.pravatar.cc/80?u=3"
     },
     {
       id: 4,
@@ -41,9 +43,10 @@ const TestimoniSection = () => {
       company: "Maya Beauty Salon",
       rating: 4,
       text: "Service cepat dan hasil memuaskan. AC salon saya yang tadinya bocor freon sekarang sudah normal kembali. Terima kasih!",
-      image: "/api/placeholder/80/80"
+      image: "https://i.pravatar.cc/80?u=4"
     }
   ];
+  // --- MODIFIKASI SELESAI ---
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -134,7 +137,7 @@ const TestimoniSection = () => {
                 "{testimonials[currentTestimonial].text}"
               </blockquote>
 
-              <div className="flex items-center justify-center space-x-4">
+              <div className="flex flex-col md:flex-row items-center justify-center space-y-4 md:space-y-0 md:space-x-4">
                 <img
                   src={testimonials[currentTestimonial].image}
                   alt={testimonials[currentTestimonial].name}
@@ -157,14 +160,14 @@ const TestimoniSection = () => {
 
           <button
             onClick={prevTestimonial}
-            className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-white hover:bg-gray-50 shadow-lg p-3 rounded-full transition-all duration-300 z-20"
+            className="absolute left-0 md:left-4 top-1/2 transform -translate-y-1/2 bg-white hover:bg-gray-50 shadow-lg p-3 rounded-full transition-all duration-300 z-20"
             onMouseEnter={() => setIsAutoPlaying(false)}
           >
             <ChevronLeft className="w-6 h-6 text-gray-700" />
           </button>
           <button
             onClick={nextTestimonial}
-            className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-white hover:bg-gray-50 shadow-lg p-3 rounded-full transition-all duration-300 z-20"
+            className="absolute right-0 md:right-4 top-1/2 transform -translate-y-1/2 bg-white hover:bg-gray-50 shadow-lg p-3 rounded-full transition-all duration-300 z-20"
             onMouseEnter={() => setIsAutoPlaying(false)}
           >
             <ChevronRight className="w-6 h-6 text-gray-700" />
@@ -185,7 +188,7 @@ const TestimoniSection = () => {
           ))}
         </div>
 
-
+        {/* Optional: Tampilan Grid Testimoni */}
         <div className="animate-on-scroll opacity-0 translate-y-10 transition-all duration-1000 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mt-12">
           {testimonials.map((testimonial, index) => (
             <div

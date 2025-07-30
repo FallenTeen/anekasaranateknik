@@ -65,9 +65,9 @@ const ContactSection = () => {
             title: 'Nomor Whatsapp',
             content: (
                 <>
-                    085156208507 atau klik{' '}
+                    0812345678 atau klik{' '}
                     <a
-                        href="https://wa.me/+6285156208507"
+                        href="https://wa.me/+62812345678"
                         className="font-semibold text-blue-600 duration-300 hover:scale-105 hover:underline"
                         target="_blank"
                         rel="noopener noreferrer"
@@ -128,7 +128,7 @@ const ContactSection = () => {
                         </p>
                         <div className="flex flex-col justify-center gap-4 sm:flex-row">
                             <a
-                                href="https://wa.me/+6285156208507"
+                                href="https://wa.me/+62812345678"
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="inline-flex transform items-center justify-center rounded-lg border border-white px-6 py-3 font-medium text-white transition-all duration-300 hover:scale-105 hover:bg-white hover:text-blue-600"

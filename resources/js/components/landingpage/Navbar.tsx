@@ -225,11 +225,11 @@ const Navbar: React.FC<NavbarProps> = ({ likedItems = [], cartCount = 0 }) => {
 
     const getImageSrc = (gambar: string | null | undefined) => {
         if (!gambar) return '/images/no-image.png';
-        
+
         if (gambar.startsWith('http://') || gambar.startsWith('https://')) {
             return gambar;
         }
-        
+
         return `/assets/images/${gambar}`;
     };
 
@@ -446,8 +446,8 @@ const Navbar: React.FC<NavbarProps> = ({ likedItems = [], cartCount = 0 }) => {
                     <div
                         className="absolute z-50 w-96 rounded-lg bg-white shadow-xl border"
                         style={{
-                            top: likesButtonRef.current ? 
-                                likesButtonRef.current.getBoundingClientRect().bottom + window.scrollY + 8 : 
+                            top: likesButtonRef.current ?
+                                likesButtonRef.current.getBoundingClientRect().bottom + window.scrollY + 8 :
                                 '100%',
                             right: '1rem'
                         }}
@@ -542,14 +542,13 @@ const Navbar: React.FC<NavbarProps> = ({ likedItems = [], cartCount = 0 }) => {
                 </div>
             )}
 
-            {/* User Dropdown */}
             {showUserDropdown && user && (
                 <div className="fixed inset-0 z-40" onClick={() => setShowUserDropdown(false)}>
                     <div
                         className="absolute z-50 w-56 rounded-lg bg-white shadow-xl border"
                         style={{
-                            top: userButtonRef.current ? 
-                                userButtonRef.current.getBoundingClientRect().bottom + window.scrollY + 8 : 
+                            top: userButtonRef.current ?
+                                userButtonRef.current.getBoundingClientRect().bottom + window.scrollY + 8 :
                                 '100%',
                             right: '1rem'
                         }}
@@ -677,7 +676,7 @@ const Navbar: React.FC<NavbarProps> = ({ likedItems = [], cartCount = 0 }) => {
                         <h2 className="text-2xl font-bold text-gray-900 mb-2">Produk Rekomendasi</h2>
                         <p className="text-gray-600">Produk pilihan terbaik untuk kebutuhan Anda</p>
                     </div>
-                    
+
                     <div className="grid grid-cols-4 gap-4">
                         {recommendedItems.map((barang) => (
                             <Link

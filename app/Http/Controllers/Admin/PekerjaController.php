@@ -7,5 +7,8 @@ use Illuminate\Http\Request;
 
 class PekerjaController extends Controller
 {
-    //
+    public function index()
+    {
+        return inertia('maintenance');
+    }
 }

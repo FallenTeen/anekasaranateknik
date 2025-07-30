@@ -39,7 +39,6 @@ class UserFeedback extends Model
         parent::boot();
 
         static::saving(function ($feedback) {
-            // Ensure rating is between 1-5
             if ($feedback->rating && ($feedback->rating < 1 || $feedback->rating > 5)) {
                 throw new \InvalidArgumentException('Rating must be between 1 and 5');
             }

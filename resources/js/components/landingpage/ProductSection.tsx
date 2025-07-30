@@ -31,9 +31,7 @@ const ProductsSection = () => {
   const { isFavorite, toggleFavorite, addToCart } = useShop();
   const popularProducts = recommendedProducts.slice(0, 3);
 
-  // Remove the addProductsToCache call since it's no longer available
   useEffect(() => {
-    // This effect is no longer needed since we removed the caching system
   }, [recommendedProducts, categoriesWithProducts]);
 
   const carouselData = [
@@ -214,7 +212,7 @@ const ProductsSection = () => {
             ))}
           </div>
           <div className="flex justify-center mb-8">
-            <a href="/public/products" className="animate-on-scroll opacity-0 translate-y-10 transition-all duration-1000 bg-gradient-to-r from-gray-800 to-gray-900 hover:from-gray-900 hover:to-black text-white text-lg font-bold py-4 px-10 rounded-xl transform hover:scale-105 transition-all duration-300 shadow-xl">
+            <a href="/public/products" className="animate-on-scroll opacity-0 translate-y-10 transition-all duration-1000 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-300 hover:to-blue-500 text-white text-lg font-bold py-4 px-10 rounded-xl transform hover:scale-105 hover:duration-300 duration-300 shadow-xl">
               Lihat Semua Produk →
             </a>
           </div>

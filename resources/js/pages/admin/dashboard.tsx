@@ -286,7 +286,7 @@ const Dashboard: React.FC<DashboardProps> = ({
                     <div className="flex items-center gap-3">
                       {barang.gambar && (
                         <img
-                          src={barang.gambar}
+                          src={`/assets/images/${barang.gambar}`}
                           alt={barang.nama_barang}
                           className="w-10 h-10 rounded object-cover"
                         />
@@ -326,7 +326,7 @@ const Dashboard: React.FC<DashboardProps> = ({
                     <div className="flex items-center gap-3">
                       {barang.gambar && (
                         <img
-                          src={barang.gambar}
+                          src={`/assets/images/${barang.gambar}`}
                           alt={barang.nama_barang}
                           className="w-10 h-10 rounded object-cover"
                         />
@@ -367,7 +367,7 @@ const Dashboard: React.FC<DashboardProps> = ({
                     <div className="flex items-center gap-3">
                       {barang.gambar && (
                         <img
-                          src={barang.gambar}
+                          src={`/assets/images/${barang.gambar}`}
                           alt={barang.nama_barang}
                           className="w-8 h-8 rounded object-cover"
                         />
@@ -431,7 +431,7 @@ const Dashboard: React.FC<DashboardProps> = ({
                         <div className="flex items-center gap-3">
                           {barang.gambar && (
                             <img
-                              src={barang.gambar}
+                              src={`/assets/images/${barang.gambar}`}
                               alt={barang.nama_barang}
                               className="w-8 h-8 rounded object-cover"
                             />
@@ -547,7 +547,7 @@ const Dashboard: React.FC<DashboardProps> = ({
                       <div className="flex items-center gap-3">
                         {keranjang.barang.gambar && (
                           <img
-                            src={keranjang.barang.gambar}
+                            src={`/assets/images/${keranjang.barang.gambar}`}
                             alt={keranjang.barang.nama_barang}
                             className="w-8 h-8 rounded object-cover"
                           />

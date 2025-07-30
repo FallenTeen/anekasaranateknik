@@ -179,7 +179,7 @@ const FooterSection = () => {
                 © {currentYear} PT. Aneka Sarana Teknik. All rights reserved.
             </div>
             <a
-                href="https://wa.me/+6285156208507"
+                href="https://wa.me/+62812345678"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="fixed right-6 bottom-6 z-50 transform rounded-full bg-green-500 p-4 text-white shadow-lg transition-all duration-300 hover:scale-110 hover:bg-green-600"
